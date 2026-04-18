@@ -14,27 +14,34 @@ jobs:
 
     permissions:
       contents: read
-      security-events: write
+      security-events: write # required by upload-sarif to post results to the GitHub Security tab
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Run Checkov
         id: checkov
-        uses: bridgecrewio/checkov-action@v12
+        uses: bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf # v12.3096.0
         with:
           directory: .
           framework: kubernetes,helm,kustomize
           output_format: sarif
           output_file_path: checkov-results.sarif
-          skip_path: argo-setup/patches          
+          # Kustomize patch fragments produce false positives when scanned standalone
+          skip_path: argo-setup/patches
+          # To be removed once existing findings are resolved
           soft_fail: true
 
-                    
       - name: Upload SARIF to GitHub Security tab
-        if: always() && hashFiles('checkov-results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        # GitHub restricts token permissions on fork PRs so we skip the upload there
+        # upload only runs on push or same-repo PRs where the token has enough permissions
+        if: >-
+          always() &&
+          hashFiles('checkov-results.sarif') != '' &&
+          (github.event_name != 'pull_request' ||
+           github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@ce64ddcb0d8d890d2df4a9d1c04ff297367dea2a # v3.35.2
         with:
           sarif_file: checkov-results.sarif
           category: iac-scanning
