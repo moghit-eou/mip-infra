@@ -54,10 +54,13 @@ patches:
       - op: add
         path: /spec/template/spec/securityContext/seccompProfile
         value: {type: RuntimeDefault}
+      - op: replace
+        path: /spec/template/spec/securityContext/runAsUser
+        value: 10000
   - target:
       kind: (Deployment|StatefulSet)
-      name: argocd-(application-controller|server|repo-server|dex-server|applicationset-controller)
+      name: argocd-(application-controller|server|repo-server|dex-server|applicationset-controller|notifications-controller)
     patch: |-
       - op: add
         path: /spec/template/spec/securityContext
-        value: {seccompProfile: {type: RuntimeDefault}}
+        value: {seccompProfile: {type: RuntimeDefault}, runAsUser: 10000, runAsNonRoot: true}
