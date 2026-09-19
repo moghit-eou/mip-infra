@@ -25,6 +25,12 @@ spec:
         app.kubernetes.io/managed-by: argocd
     spec:
       serviceAccountName: haproxy-public
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10000
+        runAsGroup: 10000
+        fsGroup: 10000
+        seccompProfile: {type: RuntimeDefault}
       containers:
         - name: controller
           image: haproxytech/kubernetes-ingress:3.2.12
