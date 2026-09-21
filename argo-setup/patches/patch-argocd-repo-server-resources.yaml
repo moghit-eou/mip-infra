@@ -7,6 +7,15 @@ spec:
   replicas: 2
   template:
     spec:
+      initContainers:
+        - name: copyutil
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
       containers:
         - name: argocd-repo-server
           resources:
