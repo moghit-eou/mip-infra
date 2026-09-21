@@ -30,6 +30,7 @@ patches:
   - path: patch-argocd-notifications-controller-resources.yaml
   - path: patch-argocd-redis-ha-haproxy-resources.yaml
   - path: patch-argocd-redis-ha-statefulset.yaml
+  - path: patch-argocd-probes.yaml
   # Argo CD config
   - path: patch-argocd-cmd-params-cm.yaml
   - path: patch-argocd-cm.yaml
