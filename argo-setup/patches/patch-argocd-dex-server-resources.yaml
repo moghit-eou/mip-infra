@@ -15,7 +15,7 @@ spec:
               memory: 32Mi
             limits:
               cpu: 50m
-              memory: 64Mi
+              memory: 256Mi
       containers:
         - name: dex
           resources:
