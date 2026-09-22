@@ -70,7 +70,6 @@ patches:
       - op: add
         path: /spec/template/spec/securityContext
         value: {seccompProfile: {type: RuntimeDefault}, runAsUser: 10000, runAsNonRoot: true}
-
 # Pin images by digest. The tag each digest corresponds to is inthe comment
 images:
   - name: quay.io/argoproj/argocd  # v3.3.11
