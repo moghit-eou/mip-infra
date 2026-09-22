@@ -26,11 +26,14 @@ patches:
   - path: patch-argocd-repo-server-resources.yaml
   - path: patch-argocd-server-resources.yaml
   - path: patch-argocd-dex-server-resources.yaml
+  - path: patch-argocd-dex-server-role.yaml
   - path: patch-argocd-applicationset-controller-resources.yaml
   - path: patch-argocd-notifications-controller-resources.yaml
   - path: patch-argocd-redis-ha-haproxy-resources.yaml
   - path: patch-argocd-redis-ha-statefulset.yaml
   - path: patch-argocd-probes.yaml
+  # Checkov suppressions
+  - path: patch-checkov-suppressions.yaml
   # Argo CD config
   - path: patch-argocd-cmd-params-cm.yaml
   - path: patch-argocd-cm.yaml
@@ -67,18 +70,7 @@ patches:
       - op: add
         path: /spec/template/spec/securityContext
         value: {seccompProfile: {type: RuntimeDefault}, runAsUser: 10000, runAsNonRoot: true}
-  # CKV_K8S_38 passes only when automountServiceAccountToken is explicitly
-  # false. These Argo CD workloads call the Kubernetes API, and the token is
-  # how they authenticate, so we cannot set it to false. Annotated instead,
-  # with the reason.
-  - target:
-      kind: (Deployment|StatefulSet)
-      name: argocd-(application-controller|server|applicationset-controller|notifications-controller|dex-server|redis-ha-haproxy)
-    patch: |-
-      - op: add
-        path: /metadata/annotations
-        value:
-          checkov.io/skip1: CKV_K8S_38=Component needs automountServiceAccountToken; it authenticates to the Kubernetes API via its bound Role or ClusterRole
+
 # Pin images by digest. The tag each digest corresponds to is inthe comment
 images:
   - name: quay.io/argoproj/argocd  # v3.3.11
