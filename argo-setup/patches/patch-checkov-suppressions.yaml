@@ -84,6 +84,12 @@ metadata:
   annotations:
     checkov.io/skip1: CKV_K8S_38=Component calls the Kubernetes API and needs the
       mounted token to authenticate
+    checkov.io/skip2: CKV_K8S_8=argocd rundex only starts the dex process when an
+      SSO connector is set in argocd-cm. This install sets none, so nothing
+      listens on 5558 and any probe there fails forever. Add the probe when SSO
+      is configured
+    checkov.io/skip3: CKV_K8S_9=Same as CKV_K8S_8, with no dex process there is
+      no readiness endpoint to probe
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -92,3 +98,14 @@ metadata:
   annotations:
     checkov.io/skip1: CKV_K8S_49=The wildcard rule is read-only get/list/watch, the
       controller must read any resource kind to compute health and sync status
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-dex-server
+  annotations:
+    checkov.io/skip1: CKV2_K8S_5=dex starts a configmap/secret informer, which
+      needs list and watch. Kubernetes RBAC cannot scope list or watch to named
+      resources, so resourceNames does not apply and the grant cannot be
+      narrowed. The Role is namespace scoped and bound only to the dex
+      ServiceAccount
