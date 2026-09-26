@@ -81,11 +81,11 @@ render_and_rewrite() {
   fi
   HEAD_SHA="$HEAD_SHA" yq -i '
     (.spec.source
-      | select((.repoURL // "" | test("moghit-eou/mip-infra"))
+      | select((.repoURL // "" | test("Medical-Informatics-Platform/mip-infra"))
                and .targetRevision == "main")
     ).targetRevision |= strenv(HEAD_SHA) |
     (.spec.sources[]?
-      | select((.repoURL // "" | test("moghit-eou/mip-infra"))
+      | select((.repoURL // "" | test("Medical-Informatics-Platform/mip-infra"))
                and .targetRevision == "main")
     ).targetRevision |= strenv(HEAD_SHA)
   ' "$out"
