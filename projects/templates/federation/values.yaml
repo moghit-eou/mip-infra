@@ -6,6 +6,7 @@ sourceRepos:
   - git@github.com:Medical-Informatics-Platform/mip-deployments.git
   - https://github.com/madgik/exareme2
   - https://github.com/Medical-Informatics-Platform/mip
+  - https://github.com/moghit-eou/mip-infra.git
 # Default server for single-cluster deployments
 server: https://kubernetes.default.svc
 # Default resource whitelists
