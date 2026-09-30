@@ -6,6 +6,15 @@ metadata:
 spec:
   template:
     spec:
+      initContainers:
+        - name: config-init
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
       containers:
         - name: redis
           resources:
@@ -15,3 +24,19 @@ spec:
             limits:
               cpu: '1'
               memory: 1Gi
+        - name: sentinel
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+        - name: split-brain-fix
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi

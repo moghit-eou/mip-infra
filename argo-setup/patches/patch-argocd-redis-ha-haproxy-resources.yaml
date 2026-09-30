@@ -2,26 +2,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: argocd-dex-server
+  name: argocd-redis-ha-haproxy
 spec:
-  replicas: 2
   template:
     spec:
       initContainers:
-        - name: copyutil
+        - name: secret-init
           resources:
             requests:
               cpu: 10m
               memory: 32Mi
             limits:
               cpu: 50m
-              memory: 256Mi
+              memory: 64Mi
+        - name: config-init
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
       containers:
-        - name: dex
+        - name: haproxy
           resources:
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 128Mi
             limits:
-              cpu: 400m
+              cpu: 500m
               memory: 512Mi
