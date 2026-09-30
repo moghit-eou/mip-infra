@@ -64,12 +64,26 @@ patches:
         value: 10000
   - target:
       kind: (Deployment|StatefulSet)
-      name: argocd-(application-controller|server|repo-server|dex-server|applicationset-controller|notifications-controller)
+      name: argocd-(application-controller|server|dex-server|applicationset-controller|notifications-controller)
     patch: |-
       - op: add
         path: /spec/template/spec/securityContext
         value: {seccompProfile: {type: RuntimeDefault}, runAsUser: 10000, runAsNonRoot: true}
-# Pin images by digest. The tag each digest corresponds to is inthe comment
+  # repo-server keeps the image's own UID (999, the only user in the image's
+  # /etc/passwd). It runs `git fetch` through the OpenSSH client, which exits
+  # with "No user exists for uid" under any UID without a passwd entry, and
+  # our Applications use git@github.com SSH repoURLs.
+  - target:
+      kind: Deployment
+      name: argocd-repo-server
+    patch: |-
+      - op: add
+        path: /spec/template/spec/securityContext
+        value: {seccompProfile: {type: RuntimeDefault}, runAsNonRoot: true}
+# Pin images by digest. The tag each digest corresponds to is in the comment.
+# Refresh these whenever the upstream tag in `resources:` is bumped: kustomize
+# rewrites every matching image to the digest, so a stale pin silently keeps
+# the old binaries under the new manifests.
 images:
   - name: quay.io/argoproj/argocd  # v3.3.11
     digest: sha256:6a99869b4c614e04a6cd4d665cb0f6a6cf74a173ad56d6dd3451ea0a3762f3f2

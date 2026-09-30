@@ -127,6 +127,11 @@
     },
     // Submariner broker + operator charts in one PR.
     { matchManagers: ['kustomize'], groupName: 'submariner' },
+    // Argo CD overlay image digests follow the upstream manifest tag, not each
+    // image's own release stream. The entries have no newTag, so the kustomize
+    // manager would chase `latest`. Refreshed by hand on each Argo CD bump
+    // (argo-setup/README.md, "Bumping Argo CD").
+    { matchManagers: ['kustomize'], matchFileNames: ['argo-setup/**'], enabled: false },
     // Federation overrides: keep their PRs separate from the shared-apps baselines.
     {
       matchFileNames: ['deployments/hybrid/federations/**'],
