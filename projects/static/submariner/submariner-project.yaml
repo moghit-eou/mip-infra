@@ -17,6 +17,7 @@ spec:
   sourceRepos:
     - https://github.com/Medical-Informatics-Platform/mip-infra.git
     - https://submariner-io.github.io/submariner-charts/charts
+    - https://github.com/moghit-eou/mip-infra.git
   destinations:
     - namespace: submariner-k8s-broker
       server: https://kubernetes.default.svc

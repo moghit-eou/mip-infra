@@ -9,6 +9,7 @@ spec:
   sourceRepos:
     - https://github.com/Medical-Informatics-Platform/mip-infra.git
     - https://github.com/Medical-Informatics-Platform/datacatalog
+    - https://github.com/moghit-eou/mip-infra.git
   destinations:
     - namespace: mip-common-datacatalog
       server: https://kubernetes.default.svc
