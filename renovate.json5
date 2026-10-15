@@ -23,9 +23,14 @@
 
   // Built-in managers relied on:
   //  - kustomize: Submariner helmCharts blocks (common/submariner/{broker,operator})
-  //  - kubernetes: HAProxy ingress controller image
+  //  - kubernetes: HAProxy ingress controller image, exaflow worker image on remote nodes,
+  //    kubectl image of the notebook RBAC reconciler
   kubernetes: {
-    managerFilePatterns: ['/^common/haproxy-ingress/manifests/.+\\.yaml$/'],
+    managerFilePatterns: [
+      '/^common/haproxy-ingress/manifests/.+\\.yaml$/',
+      '/^common/notebook-operator/manifests/.+\\.yaml$/',
+      '/^deployments/hybrid/federations/.+/remote-node/exaflow-worker/.+\\.yaml$/',
+    ],
   },
 
   customManagers: [
@@ -54,7 +59,7 @@
       description: 'exaflow_images.version in exareme2 shared values',
       managerFilePatterns: ['/^deployments/shared-apps/exareme2/values\\.yaml$/'],
       matchStrings: ['version: (?<currentValue>\\d+\\.\\d+\\.\\d+)'],
-      depNameTemplate: 'madgik/exareme2',
+      depNameTemplate: 'madgik/exaflow',
       datasourceTemplate: 'github-tags',
       versioningTemplate: 'semver',
     },
@@ -112,6 +117,17 @@
         '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[A-Z_]+_VERSION=(?<currentValue>\\S+)',
       ],
     },
+    // subctl pin in the remote-node scripts (SUBMARINER_VERSION="${SUBMARINER_VERSION:-x.y.z}").
+    // Grouped with the Submariner charts below so subctl moves with the broker and operator.
+    {
+      customType: 'regex',
+      description: 'Annotated SUBMARINER_VERSION defaults in remote-node scripts',
+      managerFilePatterns: ['/^deployments/hybrid/federations/.+/remote-node/.+\\.sh$/'],
+      matchStrings: [
+        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[A-Z_]+_VERSION="\\$\\{[A-Z_]+_VERSION:-(?<currentValue>[^}]+)\\}"',
+      ],
+      extractVersionTemplate: '^v(?<version>.*)$',
+    },
   ],
 
   packageRules: [
@@ -121,17 +137,18 @@
     { matchFileNames: ['common/monitoring/eck/values.yaml'], groupName: 'elastic-stack' },
     // exareme2 baseline: chart SHA (Application yaml) + exaflow_images.version (values) in one PR.
     {
-      matchPackageNames: ['madgik/exareme2'],
+      matchPackageNames: ['madgik/exaflow'],
       matchFileNames: ['deployments/shared-apps/**'],
       groupName: 'exareme2 baseline',
     },
-    // Submariner broker + operator charts in one PR.
+    // Submariner broker + operator charts and the remote-node subctl pin in one PR.
     { matchManagers: ['kustomize'], groupName: 'submariner' },
     // Argo CD overlay image digests follow the upstream manifest tag, not each
     // image's own release stream. The entries have no newTag, so the kustomize
     // manager would chase `latest`. Refreshed by hand on each Argo CD bump
     // (argo-setup/README.md, "Bumping Argo CD").
     { matchManagers: ['kustomize'], matchFileNames: ['argo-setup/**'], enabled: false },
+    { matchDepNames: ['submariner-io/releases'], groupName: 'submariner' },
     // Federation overrides: keep their PRs separate from the shared-apps baselines.
     {
       matchFileNames: ['deployments/hybrid/federations/**'],

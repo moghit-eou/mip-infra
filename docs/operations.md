@@ -33,7 +33,7 @@ CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 SAFE_BRANCH_NAME=$(echo "$CURRENT_BRANCH" | sed 's/[^a-zA-Z0-9]/-/g')
 
 # Refresh the AppProject generators from your branch
-kubectl apply -f base/argo-projects.yaml
+kubectl apply -f base/argo-projects/argo-projects.yaml
 
 argocd app create "${SAFE_BRANCH_NAME}-infra-clusterset" \
   --repo https://github.com/Medical-Informatics-Platform/mip-infra.git \
@@ -56,12 +56,42 @@ argocd app delete "${SAFE_BRANCH_NAME}-argo-projects"    --yes
 
 ## Adding a federation
 
+### Local federation (everything on this cluster)
+
 1. Create a new directory under `deployments/local/federations/`, e.g.`federation-B/` in the correct repository.
 2. Copy `kustomization.yaml` and `customizations/` from an existing federation (the `federation-A` skeleton is a good starting point).
 3. Update `namePrefix` in `kustomization.yaml` to your federation name.
 4. Adjust per-federation values in `customizations/`.
 5. Commit and push to the branch the ApplicationSet tracks. The `mip-infrastructure` ApplicationSet auto-discovers the new directory and creates the wrapper Application; `argo-projects` ApplicationSet creates the matching `mip-argo-project-federation-<name>` AppProject.
-6. Provision the per-federation secrets — see [getting-started.md §3](getting-started.md#3-provision-required-secrets).
+6. Provision the per-federation secrets — see [getting-started.md §6](getting-started.md#6-provision-required-secrets).
+7. Notebooks need no RBAC step: within five minutes the `mip-notebook-rbac-manager` CronJob binds the notebook operator and JupyterHub in the new namespace and adds it to the operator's watch list. Check with `kubectl -n federation-<name> get rolebinding mip-notebook-operator mip-jupyterhub`.
+
+### Hybrid federation (controller here, workers on remote nodes)
+
+1. Create `deployments/hybrid/federations/<federation>/mip-infrastructure/` from `federation-Z`: the kustomization, the `customizations/`, `network-policies.yaml` and `submariner-policies/` (worker DNS entries, one `ipBlock` per remote node, ServiceExports).
+2. Copy `deployments/hybrid/federations/<federation>/remote-node/` as the procedure handed to each remote site.
+3. Commit and push. Both ApplicationSets discover `deployments/hybrid/federations/*/mip-infrastructure`.
+4. Provision the per-federation secrets as for a local federation.
+5. Join each remote node — see [hybrid-federations.md](hybrid-federations.md).
+6. Notebook RBAC follows the namespace label as for a local federation (step 7 above).
+
+## Switching the hub to the notebook API proxy
+
+The proxy (`common/notebook-operator/manifests/api-proxy.yaml`) is deployed and verified
+before any hub uses it; the hub side needs the `madgik/mip` chart value
+`jupyterhub.apiProxy` (see
+[how-to-implement-the-notebook-properly.md](../how-to-implement-the-notebook-properly.md)).
+
+1. Check the proxy: `kubectl -n mip-notebooks-system get deploy notebook-api-proxy certificate notebook-api-proxy`
+   and `kubectl -n federation-<x> get configmap notebook-api-proxy-ca`.
+2. Set `jupyterhub.apiProxy.enabled: true` in `deployments/shared-apps/mip-stack/values.yaml`;
+   sync; spawn a notebook.
+3. Set `apiServer.hubDirect: false` in `common/security/federation/values.yaml`; sync; spawn
+   again. The hub can no longer reach the API server directly.
+
+## Adding a remote node to a hybrid federation
+
+See [hybrid-federations.md](hybrid-federations.md#adding-a-remote-node) and the step-by-step runbook in `deployments/hybrid/federations/<federation>/remote-node/README.md`.
 
 ## Customising applications per federation
 

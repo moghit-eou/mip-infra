@@ -1,0 +1,33 @@
+---
+# Submariner operator values for the second remote MicroK8s node of
+# federation-Z (the node behind NAT). Identical to submariner-values.yaml
+# except for the CIDRs, which must not overlap the central cluster or any
+# other remote node. Pass it to the join with VALUES_FILE=submariner-values-node2.yaml.
+#
+# Consumed by join-submariner.sh together with a generated local-values.yaml
+# that carries the cluster ID and the broker credentials (never committed).
+# The chart version is passed on the command line and must match the central
+# cluster (common/submariner/{broker,operator}/kustomization.yaml).
+broker:
+  server: mip.chuv.cscs.ch:6443  # central API server; real value, consumed by Helm
+  namespace: submariner-k8s-broker
+  insecure: false
+  token: ''  # set by join-submariner.sh: plain service-account token
+  ca: ''  # set by join-submariner.sh: CA as stored in the secret (base64, not decoded)
+submariner:
+  clusterId: ''  # set by join-submariner.sh: the enrolled cluster ID
+  clusterCidr: 10.4.0.0/16  # must equal IPv4_CLUSTER_CIDR given to setup-microk8s.sh
+  serviceCidr: 10.152.186.0/24  # must equal IPv4_SERVICE_CIDR given to setup-microk8s.sh
+  globalCidr: ''  # Globalnet is disabled on the broker
+  natEnabled: true  # this node sits behind NAT; the tunnel is initiated from here
+  cableDriver: libreswan
+  serviceDiscovery: true
+  healthcheckEnabled: true
+  loadBalancerEnabled: false  # the gateway uses the node address
+  debug: false
+ipsec:
+  psk: ''  # set by join-submariner.sh: .data.psk of submariner-ipsec-psk as stored (base64, not decoded)
+  natPort: 4500
+  ikePort: 500
+  forceUDPEncaps: false
+  debug: false

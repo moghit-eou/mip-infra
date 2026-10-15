@@ -63,6 +63,13 @@ rules:
       - serviceaccounts
       - services
     verbs: [create, delete, patch, update]
+  # MIP notebook operator: NotebookProfiles are synced by the madgik/mip
+  # chart. The hub Role is applied out-of-band
+  # (base/mip-infrastructure/notebook-operator/rbac.yaml), so this controller
+  # holds no RBAC write and no pods `create`.
+  - apiGroups: [notebooks.mip.ebrains.eu]
+    resources: [notebookprofiles]
+    verbs: [create, delete, patch, update]
 
   # Rule 3: Special case for deleting pods
   # Argo CD needs permission to delete pods for certain sync strategies (e.g., recreate)
@@ -83,6 +90,23 @@ rules:
   - apiGroups: [projectcalico.org]
     resources: [ippools]
     verbs: [create, delete, update, deletecollection]
+  # Calico tier and global policy confining the Submariner remote CIDRs
+  # (common/security/remote-clusters, project mip-argo-project-security).
+  # Calico authorises policies inside a tier through the pseudo-resource
+  # tier.globalnetworkpolicies with the tier-qualified name; nothing is
+  # granted on policies of the default tier. Reads come from rule 1.
+  - apiGroups: [projectcalico.org]
+    resources: [tiers]
+    verbs: [create, delete, patch, update]
+  - apiGroups: [projectcalico.org]
+    resources: [tier.globalnetworkpolicies]
+    resourceNames: [remote-clusters.*]
+    verbs: [create, delete, patch, update]
+  # ServiceExports published by hybrid federations
+  # (deployments/hybrid/federations/*/mip-infrastructure/submariner-policies/)
+  - apiGroups: [multicluster.x-k8s.io]
+    resources: [serviceexports]
+    verbs: [create, delete, patch, update]
   - apiGroups: [submariner.io]
     resources:
       - clusters
