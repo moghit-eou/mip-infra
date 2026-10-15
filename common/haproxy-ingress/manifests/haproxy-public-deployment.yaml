@@ -5,8 +5,10 @@ metadata:
   name: haproxy-public-controller
   namespace: ingress-nginx
   annotations:
-    checkov.io/skip1: CKV_K8S_40=the image user haproxy is UID 1000 and only it can write /etc/haproxy, a higher UID breaks startup
-    checkov.io/skip2: CKV_K8S_22=haproxy writes its config, maps and certs to /etc/haproxy on the image filesystem at startup
+    checkov.io/skip1: CKV_K8S_40=the image user haproxy is UID 1000 and only it can
+      write /etc/haproxy, a higher UID breaks startup
+    checkov.io/skip2: CKV_K8S_22=haproxy writes its config, maps and certs to /etc/haproxy
+      on the image filesystem at startup
   labels:
     app.kubernetes.io/name: haproxy-public
     app.kubernetes.io/instance: haproxy-public
