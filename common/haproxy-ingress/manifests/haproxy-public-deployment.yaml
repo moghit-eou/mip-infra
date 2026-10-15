@@ -38,7 +38,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: controller
-          image: haproxytech/kubernetes-ingress:3.2.16
+          image: haproxytech/kubernetes-ingress:3.2.16@sha256:498627d9aea4a5621f51747e6ecd4aaf267ea0b3540cbb6c2fdb36b742d013ee
           imagePullPolicy: IfNotPresent
           args:
             - --configmap=ingress-nginx/haproxy
