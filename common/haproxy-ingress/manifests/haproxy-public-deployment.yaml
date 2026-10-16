@@ -9,6 +9,8 @@ metadata:
       write /etc/haproxy, a higher UID breaks startup
     checkov.io/skip2: CKV_K8S_22=haproxy writes its config, maps and certs to /etc/haproxy
       on the image filesystem at startup
+    checkov.io/skip3: CKV_K8S_25=haproxy_wrapper has the cap_net_bind_service file capability, 
+      the kernel refuses to run it without that capability
   labels:
     app.kubernetes.io/name: haproxy-public
     app.kubernetes.io/instance: haproxy-public
