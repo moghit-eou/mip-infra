@@ -11,6 +11,8 @@ metadata:
       on the image filesystem at startup
     checkov.io/skip3: CKV_K8S_25=haproxy_wrapper has the cap_net_bind_service file
       capability, the kernel refuses to run it without that capability
+    checkov.io/skip4: CKV_K8S_38=the ingress controller reads Ingresses, Services
+      and Secrets and updates Ingress status through the API server
   labels:
     app.kubernetes.io/name: haproxy-public
     app.kubernetes.io/instance: haproxy-public
