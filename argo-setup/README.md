@@ -155,9 +155,10 @@ argocd version
    ```bash
    bash scripts/check-upstream-argo-clusterroles.sh --update
    ```
-4. Re-render the overlay locally: `kubectl kustomize patches >/dev/null`.
-5. Open a PR; CI runs the kustomize render and the drift check.
-6. After merge, re-apply against the live cluster — `argo-setup/` is bootstrapped out-of-band, not self-managed by Argo CD:
+4. Refresh the image digest pins in the `images:` block of `patches/kustomization.yaml`. For each image, take the tag the new upstream manifest uses (`curl -sL <install.yaml URL> | grep 'image:' | sort -u`), then resolve that tag's multi-arch digest, e.g. `docker buildx imagetools inspect quay.io/argoproj/argocd:<TAG>`. Update the tag comment too. A stale pin keeps the old binaries running under the new manifests.
+5. Re-render the overlay locally: `kubectl kustomize patches >/dev/null`.
+6. Open a PR; CI runs the kustomize render and the drift check.
+7. After merge, re-apply against the live cluster — `argo-setup/` is bootstrapped out-of-band, not self-managed by Argo CD:
    ```bash
    kustomize build argo-setup/patches \
      | kubectl apply -n argocd-mip-team --server-side --force-conflicts -f -
