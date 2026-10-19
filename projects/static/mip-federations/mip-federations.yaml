@@ -11,6 +11,7 @@ spec:
     - git@github.com:Medical-Informatics-Platform/mip-deployments.git
     - https://github.com/madgik/exaflow
     - https://github.com/Medical-Informatics-Platform/mip
+    - https://github.com/moghit-eou/mip-infra.git
   destinations:
     - namespace: argocd-mip-team
       server: https://kubernetes.default.svc

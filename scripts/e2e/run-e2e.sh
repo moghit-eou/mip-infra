@@ -32,6 +32,9 @@ case "$PROFILE" in
   *) echo "usage: PROFILE=<exareme2|mip-stack|eck|haproxy|datacatalog> $0" >&2; exit 2 ;;
 esac
 
+# Repo Argo CD fetches mip-infra from: the repo this CI run belongs to
+# (your fork on a fork run, upstream on upstream). GitHub Actions sets GITHUB_REPOSITORY.
+E2E_REPO_URL=${E2E_REPO_URL:-https://github.com/${GITHUB_REPOSITORY:-Medical-Informatics-Platform/mip-infra}.git}
 CLUSTER=${CLUSTER:-mip-e2e}
 REPO_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 KEEP=${KEEP:-0}
@@ -79,15 +82,15 @@ render_and_rewrite() {
   else
     cp "$src" "$out"
   fi
-  HEAD_SHA="$HEAD_SHA" yq -i '
+  HEAD_SHA="$HEAD_SHA" E2E_REPO_URL="$E2E_REPO_URL" yq -i '
     (.spec.source
-      | select((.repoURL // "" | test("Medical-Informatics-Platform/mip-infra"))
+      | select((.repoURL // "" | test("github\\.com/[^/]+/mip-infra(\\.git)?$"))
                and .targetRevision == "main")
-    ).targetRevision |= strenv(HEAD_SHA) |
+    ) |= (.targetRevision = strenv(HEAD_SHA) | .repoURL = strenv(E2E_REPO_URL)) |
     (.spec.sources[]?
-      | select((.repoURL // "" | test("Medical-Informatics-Platform/mip-infra"))
+      | select((.repoURL // "" | test("github\\.com/[^/]+/mip-infra(\\.git)?$"))
                and .targetRevision == "main")
-    ).targetRevision |= strenv(HEAD_SHA)
+    ) |= (.targetRevision = strenv(HEAD_SHA) | .repoURL = strenv(E2E_REPO_URL))
   ' "$out"
 
   local got
@@ -102,6 +105,17 @@ render_and_rewrite() {
     fail "render of $src references the private mip-deployments repo"
   fi
   echo "OK: rewrote $got targetRevision line(s) to ${HEAD_SHA}"
+}
+
+allow_repo_in_projects() {
+  local p repos
+  for p in $(kubectl -n "$NS" get appproject -o name); do
+    [[ "$p" == */default ]] && continue
+    repos=$(kubectl -n "$NS" get "$p" -o jsonpath='{.spec.sourceRepos}')
+    [[ "$repos" == *"$E2E_REPO_URL"* ]] && continue
+    kubectl -n "$NS" patch "$p" --type json \
+      -p "[{\"op\":\"add\",\"path\":\"/spec/sourceRepos/-\",\"value\":\"$E2E_REPO_URL\"}]"
+  done
 }
 
 # wait_app <application-name> [timeout-seconds]
@@ -213,6 +227,7 @@ deploy_federation_apps() {
   # mip-argo-projects-of-federations ApplicationSet from this chart (whose
   # defaults are federation-a already).
   helm template "$REPO_ROOT/projects/templates/federation" | kubectl apply -f -
+  allow_repo_in_projects
 
   step "Create CI secrets (federation)"
   bash "$REPO_ROOT/scripts/e2e/ci-secrets.sh" federation
@@ -474,6 +489,8 @@ wait_argo_rollouts
 
 step "Apply static AppProjects"
 apply_static_appprojects
+allow_repo_in_projects
+
 
 step "Apply kind StorageClass aliases"
 kubectl apply -f "$REPO_ROOT/tests/e2e/kind/storageclasses.yaml"
