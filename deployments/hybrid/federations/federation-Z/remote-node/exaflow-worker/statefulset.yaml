@@ -50,6 +50,9 @@ spec:
       containers:
         - name: worker
           image: madgik/exaflow_worker:1.2.1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
           ports:
             - name: grpc
               containerPort: 5672
