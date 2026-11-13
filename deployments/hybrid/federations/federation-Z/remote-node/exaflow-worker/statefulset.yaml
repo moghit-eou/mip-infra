@@ -35,6 +35,7 @@ spec:
         app: exaflow-worker
         nodeType: localworker
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         # The image user appuser is UID and GID 10001 (exaflow/worker/Dockerfile).
