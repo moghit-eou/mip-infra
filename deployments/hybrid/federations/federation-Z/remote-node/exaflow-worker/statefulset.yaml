@@ -50,7 +50,7 @@ spec:
             name: synthetic-data  # built by deploy-worker.sh: CDEsMetadata.json and the node's CSV
       containers:
         - name: worker
-          image: madgik/exaflow_worker:1.2.1
+          image: madgik/exaflow_worker:1.2.1@sha256:ce002cfa6d0b0b07c8fcae6d090e1061f956d2797712a832126932cc45070edb
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: [ALL]}
