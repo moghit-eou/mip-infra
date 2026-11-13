@@ -35,6 +35,12 @@ spec:
         app: exaflow-worker
         nodeType: localworker
     spec:
+      securityContext:
+        runAsNonRoot: true
+        # The image user appuser is UID and GID 10001 (exaflow/worker/Dockerfile).
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
       volumes:
         - name: duckdb-data
           emptyDir: {}
