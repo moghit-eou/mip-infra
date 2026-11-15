@@ -1,6 +1,6 @@
 {{- if .Values.observability.filebeat.enabled }}
 apiVersion: beat.k8s.elastic.co/v1beta1
-kind: Beat
+kind: DaemonSet
 metadata:
   name: {{ .Release.Name }}-filebeat
   namespace: {{ include "eck-stack.operatorNamespace" . }}
@@ -14,8 +14,7 @@ spec:
   elasticsearchRef:
     name: {{ .Values.elasticsearch.name }}
     namespace: {{ .Values.elasticsearch.namespace | default (include "eck-stack.operatorNamespace" .) }}
-  daemonSet:
-    podTemplate:
+  template:
       metadata:
         labels:
           app.kubernetes.io/name: filebeat
