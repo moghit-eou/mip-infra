@@ -1,0 +1,75 @@
+---
+name: IaC Demo (render + Checkov)
+
+# Demo pipeline:
+#   job render  -> scripts/iac/render_demo.py writes _rendered/ours and _rendered/upstream
+#   job checkov -> scans ours (ours to fix) and upstream (fix in the other repo)
+
+on:
+  workflow_dispatch: {}
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install kustomize
+        env:
+          KUSTOMIZE_VERSION: v5.8.1
+          KUSTOMIZE_SHA256: 029a7f0f4e1932c52a0476cf02a0fd855c0bb85694b82c338fc648dcb53a819d
+        run: |
+          set -euo pipefail
+          tarball=kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz
+          curl -sSfLo "$tarball" \
+            "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/${tarball}"
+          echo "${KUSTOMIZE_SHA256}  ${tarball}" | sha256sum -c -
+          tar -xzf "$tarball" kustomize
+          sudo install -m 0755 kustomize /usr/local/bin/kustomize
+
+      # helm and yq come with the runner image
+      - name: Render
+        run: python3 scripts/iac/render_demo.py
+
+      - name: Upload rendered manifests
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: rendered
+          path: _rendered/
+          include-hidden-files: true
+
+  checkov:
+    needs: render
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download rendered manifests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: rendered
+          path: _rendered
+
+      # Our manifests: we can fix these here. Report only for now (remove --soft-fail to block).
+      - name: Checkov on ours
+        run: |
+          pipx run --spec checkov==3.4.6 checkov -d _rendered/ours --framework kubernetes \
+            --quiet --compact --soft-fail -o cli -o github_failed_only \
+            --output-file-path console,ours.md
+          { echo "## Ours (fix in mip-infra)"; cat ours.md; } >> "$GITHUB_STEP_SUMMARY"
+
+      # Charts from other repos: report only, the fix goes upstream (or in our values files).
+      - name: Checkov on upstream
+        run: |
+          pipx run --spec checkov==3.4.6 checkov -d _rendered/upstream --framework kubernetes \
+            --quiet --compact --soft-fail -o cli -o github_failed_only \
+            --output-file-path console,upstream.md
+          { echo "## Upstream (fix in the other repo)"; cat upstream.md; } >> "$GITHUB_STEP_SUMMARY"
