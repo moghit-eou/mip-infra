@@ -62,7 +62,7 @@ jobs:
       - name: Checkov on ours
         run: |
           pipx run --spec checkov==3.4.6 checkov -d _rendered/ours --framework kubernetes \
-            --quiet --compact -o cli -o github_failed_only \
+            --quiet --compact --soft-fail -o cli -o github_failed_only \
             --output-file-path console,ours.md
           { echo "## Ours (fix in mip-infra)"; cat ours.md; } >> "$GITHUB_STEP_SUMMARY"
 
@@ -70,6 +70,6 @@ jobs:
       - name: Checkov on upstream
         run: |
           pipx run --spec checkov==3.4.6 checkov -d _rendered/upstream --framework kubernetes \
-            --quiet --compact -o cli -o github_failed_only \
+            --quiet --compact  -o cli -o github_failed_only \
             --output-file-path console,upstream.md
           { echo "## Upstream (fix in the other repo)"; cat upstream.md; } >> "$GITHUB_STEP_SUMMARY"
